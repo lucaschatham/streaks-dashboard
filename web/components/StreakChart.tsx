@@ -13,7 +13,7 @@ export default function StreakChart({ habits, entries }: StreakChartProps) {
   // Calculate daily streak values for the last 30 days
   const days = 30
   const endDate = startOfDay(new Date())
-  const data = []
+  const data: any[] = []
 
   // Get top 5 habits by current streak
   const topHabits = [...habits]
