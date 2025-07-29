@@ -1,0 +1,32 @@
+# Logs
+logs/
+*.log
+
+# Archives (keep only latest and summary)
+data/streaks_*.json
+
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+.next/
+out/
+.vercel
+*.local
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.python-version
+venv/
+.venv/

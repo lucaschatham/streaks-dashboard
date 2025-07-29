@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.streaks-sync</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/HQ/builds/streaks-dashboard/scripts/sync_to_github.sh</string>
+    </array>
+    
+    <key>StartCalendarInterval</key>
+    <array>
+        <!-- Primary run at 2:05 AM -->
+        <dict>
+            <key>Hour</key>
+            <integer>2</integer>
+            <key>Minute</key>
+            <integer>5</integer>
+        </dict>
+        <!-- Secondary run at 2:05 PM for mid-day updates -->
+        <dict>
+            <key>Hour</key>
+            <integer>14</integer>
+            <key>Minute</key>
+            <integer>5</integer>
+        </dict>
+    </array>
+    
+    <key>StandardOutPath</key>
+    <string>/Users/HQ/builds/streaks-dashboard/logs/launchd_stdout.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/Users/HQ/builds/streaks-dashboard/logs/launchd_stderr.log</string>
+    
+    <key>WorkingDirectory</key>
+    <string>/Users/HQ/builds/streaks-dashboard</string>
+    
+    <!-- Run even if computer was asleep -->
+    <key>RunAtLoad</key>
+    <false/>
+    
+    <!-- Environment variables -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+</dict>
+</plist>
