@@ -1,25 +1,35 @@
-import { LogEntry } from '@/lib/types'
-import { format, startOfDay, eachDayOfInterval, subDays } from 'date-fns'
+import { format, eachDayOfInterval, startOfWeek, subDays } from 'date-fns'
 
 interface CalendarHeatmapProps {
-  entries: LogEntry[]
+  data?: { [date: string]: boolean }
+  startDate?: Date
+  endDate?: Date
+  entries?: any[]
 }
 
-export default function CalendarHeatmap({ entries }: CalendarHeatmapProps) {
-  // Calculate daily completion counts
+export default function CalendarHeatmap({ data = {}, startDate, endDate, entries }: CalendarHeatmapProps) {
+  // Handle both new format (data prop) and old format (entries prop)
   const dailyCounts: Record<string, number> = {}
   
-  entries.forEach(entry => {
-    if (entry.entry_date) {
-      const date = format(new Date(entry.entry_date), 'yyyy-MM-dd')
-      dailyCounts[date] = (dailyCounts[date] || 0) + 1
-    }
-  })
+  if (entries) {
+    entries.forEach(entry => {
+      if (entry.entry_date) {
+        const date = format(new Date(entry.entry_date), 'yyyy-MM-dd')
+        dailyCounts[date] = (dailyCounts[date] || 0) + 1
+      }
+    })
+  } else if (data) {
+    Object.entries(data).forEach(([date, completed]) => {
+      if (completed) {
+        dailyCounts[date] = 1
+      }
+    })
+  }
 
-  // Generate last 365 days
-  const endDate = new Date()
-  const startDate = subDays(endDate, 364)
-  const days = eachDayOfInterval({ start: startDate, end: endDate })
+  // Generate date range
+  const end = endDate || new Date()
+  const start = startDate || subDays(end, 364)
+  const days = eachDayOfInterval({ start, end: end })
 
   // Get max count for scaling
   const maxCount = Math.max(...Object.values(dailyCounts), 1)
@@ -37,37 +47,44 @@ export default function CalendarHeatmap({ entries }: CalendarHeatmapProps) {
   })
 
   const getColor = (count: number) => {
-    if (count === 0) return 'bg-gray-100 dark:bg-gray-800'
-    const intensity = count / maxCount
-    if (intensity > 0.75) return 'bg-streak-green'
-    if (intensity > 0.5) return 'bg-green-400'
-    if (intensity > 0.25) return 'bg-green-300'
-    return 'bg-green-200'
+    if (count === 0) return 'bg-gray-700'
+    return 'bg-green-500'
   }
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const daysOfWeek = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
+  // Get current month for display
+  const currentMonth = format(new Date(), 'MMM')
+  
+  // Calculate which months to show labels for
+  const monthLabels: { [key: number]: string } = {}
+  days.forEach((day, index) => {
+    if (day.getDate() === 1 || index === 0) {
+      const weekIndex = Math.floor(index / 7)
+      monthLabels[weekIndex] = format(day, 'MMM')
+    }
+  })
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 overflow-x-auto">
+    <div className="overflow-x-auto">
       <div className="inline-block">
-        {/* Day labels */}
-        <div className="flex gap-1 mb-2">
-          <div className="w-12"></div>
-          {daysOfWeek.map((day, i) => (
-            <div key={i} className="w-3 h-3 text-xs text-gray-500 flex items-center justify-center">
-              {i % 2 === 1 ? day : ''}
+        {/* Month labels */}
+        <div className="flex gap-1 mb-1">
+          <div className="w-8"></div>
+          {weeks.map((_, weekIndex) => (
+            <div key={weekIndex} className="w-3 text-xs text-gray-500">
+              {monthLabels[weekIndex] || ''}
             </div>
           ))}
         </div>
 
-        {/* Calendar grid */}
         <div className="flex gap-1">
-          {/* Month labels */}
-          <div className="flex flex-col gap-1">
-            {months.map((month, i) => (
-              <div key={i} className="h-12 text-xs text-gray-500 flex items-center pr-2">
-                {i % 3 === 0 ? month : ''}
+          {/* Day labels */}
+          <div className="flex flex-col gap-1 pr-1">
+            {daysOfWeek.map((day, i) => (
+              <div key={i} className="h-3 w-8 text-xs text-gray-500 flex items-center">
+                {i % 2 === 1 ? day : ''}
               </div>
             ))}
           </div>
@@ -76,34 +93,26 @@ export default function CalendarHeatmap({ entries }: CalendarHeatmapProps) {
           <div className="flex gap-1">
             {weeks.map((week, weekIndex) => (
               <div key={weekIndex} className="flex flex-col gap-1">
-                {week.map((day, dayIndex) => {
+                {Array.from({ length: 7 }).map((_, dayIndex) => {
+                  const day = week[dayIndex]
+                  if (!day) {
+                    return <div key={dayIndex} className="w-3 h-3" />
+                  }
+                  
                   const dateStr = format(day, 'yyyy-MM-dd')
                   const count = dailyCounts[dateStr] || 0
                   
                   return (
                     <div
                       key={dayIndex}
-                      className={`w-3 h-3 rounded-sm ${getColor(count)} hover:ring-2 hover:ring-streak-blue transition-all`}
-                      title={`${format(day, 'MMM d, yyyy')}: ${count} completions`}
+                      className={`w-3 h-3 rounded-sm ${getColor(count)} hover:ring-1 hover:ring-green-400 transition-all cursor-pointer`}
+                      title={`${format(day, 'MMM d, yyyy')}: ${count > 0 ? 'Completed' : 'Not completed'}`}
                     />
                   )
                 })}
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Legend */}
-        <div className="flex items-center gap-2 mt-4 text-xs text-gray-600 dark:text-gray-400">
-          <span>Less</span>
-          <div className="flex gap-1">
-            <div className="w-3 h-3 bg-gray-100 dark:bg-gray-800 rounded-sm"></div>
-            <div className="w-3 h-3 bg-green-200 rounded-sm"></div>
-            <div className="w-3 h-3 bg-green-300 rounded-sm"></div>
-            <div className="w-3 h-3 bg-green-400 rounded-sm"></div>
-            <div className="w-3 h-3 bg-streak-green rounded-sm"></div>
-          </div>
-          <span>More</span>
         </div>
       </div>
     </div>
